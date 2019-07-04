@@ -87,18 +87,20 @@ task downloadJSCHeaders(dependsOn: createNativeDepsDirectories, type: Download) 
   dest output
 }
 
-task prepareJSC(dependsOn: downloadJSCHeaders) << {
-  copy {
-    from {downloadJSCHeaders.dest}
-    include 'jni/**/*.so', '*.h', 'Android.mk'
-    filesMatching('*.h', { fname -> fname.path = "JavaScriptCore/${fname.path}"})
-    into "$thirdPartyNdkDir/jsc";
+task prepareJSC(dependsOn: downloadJSCHeaders) {
+  doLast {
+    copy {
+      from {downloadJSCHeaders.dest}
+      include 'jni/**/*.so', '*.h', 'Android.mk'
+      filesMatching('*.h', { fname -> fname.path = "JavaScriptCore/${fname.path}"})
+      into "$thirdPartyNdkDir/jsc";
+    }
   }
 }
 
 task buildRNWebGLLib(dependsOn: [prepareJSC], type: Exec) {
-  inputs.file('src/main/jni')
-  inputs.file('../cpp')
+  inputs.dir('src/main/jni')
+  inputs.dir('../cpp')
   outputs.dir("$buildDir/exgl/all")
   commandLine getNdkBuildFullPath(),
           'NDK_PROJECT_PATH=null',
@@ -124,12 +126,12 @@ task packageRNWebGLLibs(dependsOn: buildRNWebGLLib, type: Copy) {
 }
 
 android {
-  compileSdkVersion 26
-  buildToolsVersion '25.0.0'
+  compileSdkVersion project.hasProperty('compileSdkVersion') ? project.compileSdkVersion : 26
+  buildToolsVersion project.hasProperty('buildToolsVersion') ? project.buildToolsVersion : '25.0.0'
 
   defaultConfig {
     minSdkVersion 17
-    targetSdkVersion 26
+    targetSdkVersion project.hasProperty('targetSdkVersion') ? project.targetSdkVersion : 24
     versionCode 1
     versionName "1.0"
     ndk {
